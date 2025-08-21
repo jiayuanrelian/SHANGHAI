@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import me.zhengjie.modules.system.service.dto.RoleDto;
 import me.zhengjie.modules.system.service.dto.RoleQueryCriteria;
 import me.zhengjie.modules.system.service.dto.RoleSmallDto;
 import me.zhengjie.modules.system.service.dto.UserDto;
+import me.zhengjie.utils.PageResult;
 import org.springframework.data.domain.Pageable;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -66,10 +67,10 @@ public interface RoleService {
 
     /**
      * 根据用户ID查询
-     * @param id 用户ID
+     * @param userId 用户ID
      * @return /
      */
-    List<RoleSmallDto> findByUsersId(Long id);
+    List<RoleSmallDto> findByUsersId(Long userId);
 
     /**
      * 根据角色查询角色级别
@@ -97,7 +98,7 @@ public interface RoleService {
      * @param pageable 分页参数
      * @return /
      */
-    Object queryAll(RoleQueryCriteria criteria, Pageable pageable);
+    PageResult<RoleDto> queryAll(RoleQueryCriteria criteria, Pageable pageable);
 
     /**
      * 查询全部
@@ -119,7 +120,7 @@ public interface RoleService {
      * @param user 用户信息
      * @return 权限信息
      */
-    List<AuthorityDto> mapToGrantedAuthorities(UserDto user);
+    List<AuthorityDto> buildPermissions(UserDto user);
 
     /**
      * 验证是否被用户关联

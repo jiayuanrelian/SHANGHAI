@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import me.zhengjie.modules.system.domain.DictDetail;
 import me.zhengjie.modules.system.service.DictDetailService;
 import me.zhengjie.modules.system.service.dto.DictDetailDto;
 import me.zhengjie.modules.system.service.dto.DictDetailQueryCriteria;
+import me.zhengjie.utils.PageResult;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -51,8 +52,8 @@ public class DictDetailController {
 
     @ApiOperation("查询字典详情")
     @GetMapping
-    public ResponseEntity<Object> queryDictDetail(DictDetailQueryCriteria criteria,
-                                         @PageableDefault(sort = {"dictSort"}, direction = Sort.Direction.ASC) Pageable pageable){
+    public ResponseEntity<PageResult<DictDetailDto>> queryDictDetail(DictDetailQueryCriteria criteria,
+                                                                     @PageableDefault(sort = {"dictSort"}, direction = Sort.Direction.ASC) Pageable pageable){
         return new ResponseEntity<>(dictDetailService.queryAll(criteria,pageable),HttpStatus.OK);
     }
 

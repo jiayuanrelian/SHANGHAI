@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package me.zhengjie.modules.system.service;
 
 import me.zhengjie.modules.system.domain.Menu;
+import me.zhengjie.modules.system.domain.vo.MenuVo;
 import me.zhengjie.modules.system.service.dto.MenuDto;
 import me.zhengjie.modules.system.service.dto.MenuQueryCriteria;
 
@@ -78,7 +79,7 @@ public interface MenuService {
      * @param menuDtos /
      * @return /
      */
-    Object buildMenus(List<MenuDto> menuDtos);
+    List<MenuVo> buildMenus(List<MenuDto> menuDtos);
 
     /**
      * 根据ID查询

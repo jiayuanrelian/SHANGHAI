@@ -9,7 +9,9 @@
 </div>
 
 #### 项目简介
-一个基于 Spring Boot 2.1.0 、 Spring Boot Jpa、 JWT、Spring Security、Redis、Vue的前后端分离的后台管理系统
+一个基于 Spring Boot 2.7.18 、 Spring Boot Jpa、 JWT、Spring Security、Redis、Vue的前后端分离的后台管理系统
+
+现已发布基于 mybatis-plus 版本，项目地址：[https://github.com/elunez/eladmin-mp](https://github.com/elunez/eladmin-mp)、[https://gitee.com/elunez/eladmin-mp](https://gitee.com/elunez/eladmin-mp)。
 
 **开发文档：**  [https://eladmin.vip](https://eladmin.vip)
 
@@ -23,6 +25,13 @@
 |---  |--- | --- |
 |  github   |  https://github.com/elunez/eladmin   |  https://github.com/elunez/eladmin-web   |
 |  码云   |  https://gitee.com/elunez/eladmin   |  https://gitee.com/elunez/eladmin-web   |
+
+#### VPS推荐
+<a href="https://bwh81.net/aff.php?aff=70876" target="_blank">
+<img src="https://eladmin.vip/images/banner/side.jpeg" style="width: 435px;border-radius: 2px;">
+</a>
+
+使用优惠码: `BWHCGLUKKB`，可获得 6.81% 的折扣 [查看介绍](https://bwhstock.in/)
 
 #### 主要特性
 - 使用最新技术栈，社区资源丰富。
@@ -48,7 +57,7 @@
 - 定时任务：整合Quartz做定时任务，加入任务日志，任务运行情况一目了然
 - 代码生成：高灵活度生成前后端代码，减少大量重复的工作任务
 - 邮件工具：配合富文本，发送html格式的邮件
-- 七牛云存储：可同步七牛云存储的数据到系统，无需登录七牛云直接操作云数据
+- 亚马逊S3云存储：支持市面上大多数对象存储，兼容亚马逊S3协议，如七牛云，阿里云等
 - 支付宝支付：整合了支付宝支付并且提供了测试账号，可自行测试
 - 服务监控：监控服务器的负载情况
 - 运维管理：一键部署你的应用
@@ -62,9 +71,9 @@
 
 - `eladmin-logging` 为系统的日志模块，其他模块如果需要记录日志需要引入该模块
 
-- `eladmin-tools` 为第三方工具模块，包含：图床、邮件、云存储、本地存储、支付宝
+- `eladmin-tools` 为第三方工具模块，包含：邮件、亚马逊S3云存储、本地存储、支付宝
 
-- `eladmin-generator` 为系统的代码生成模块，代码生成的模板在 system 模块中
+- `eladmin-generator` 为系统的代码生成模块，支持生成前后端CRUD代码
 
 #### 详细结构
 
@@ -73,23 +82,33 @@
     - annotation 为系统自定义注解
     - aspect 自定义注解的切面
     - base 提供了Entity、DTO基类和mapstruct的通用mapper
-    - config 自定义权限实现、redis配置、swagger配置、Rsa配置等
+    - config 项目通用配置
+        - Web配置跨域与静态资源映射、Swagger配置，文件上传临时路径配置
+        - Redis配置，Redission配置, 异步线程池配置
+        - 权限拦截配置、AuthorityConfig、Druid 删除广告配置
     - exception 项目统一异常的处理
-    - utils 系统通用工具类
+    - utils 系统通用工具类，列举一些常用的工具类
+        - BigDecimaUtils 金额计算工具类
+        - RequestHolder 请求工具类
+        - SecurityUtils 安全工具类
+        - StringUtils 字符串工具类
+        - SpringBeanHolder Spring Bean工具类
+        - RedisUtils Redis工具类
+        - EncryptUtils 加密工具类
+        - FileUtil 文件工具类
 - eladmin-system 系统核心模块（系统启动入口）
-	- config 配置跨域与静态资源，与数据权限
-	    - thread 线程池相关
-	- modules 系统相关模块(登录授权、系统监控、定时任务、运维管理等)
+    - sysrunner 程序启动后处理数据
+	- modules 系统相关模块(登录授权、系统监控、定时任务、系统模块、运维模块)
 - eladmin-logging 系统日志模块
 - eladmin-tools 系统第三方工具模块
+    - email 邮件工具
+    - amazon 亚马逊S3云存储工具
+    - alipay 支付宝支付工具
+    - local-storage 本地存储工具
 - eladmin-generator 系统代码生成模块
 ```
 
 #### 特别鸣谢
-
-- 感谢 [JetBrains](https://www.jetbrains.com/) 提供的非商业开源软件开发授权
-
-- 感谢 [七牛云](https://www.qiniu.com/) 提供的免费云存储与CDN加速支持
 
 - 感谢 [PanJiaChen](https://github.com/PanJiaChen/vue-element-admin) 大佬提供的前端模板
 
@@ -102,7 +121,7 @@
 - 感谢 [d15801543974](https://github.com/d15801543974) 大佬提供的基于注解的通用查询方式
 
 #### 项目捐赠
-项目的发展离不开你的支持，请作者喝杯咖啡吧☕  [Donate](https://eladmin.vip/donation/)
+项目的发展离不开你的支持，请作者喝杯咖啡吧☕  [Donate](https://eladmin.vip/pages/030101/)
 
 #### 反馈交流
-- QQ交流群：一群：<strike>891137268</strike> 、二群：<strike>947578238</strike>、三群：659622532
+- QQ交流群：891137268 、947578238、659622532

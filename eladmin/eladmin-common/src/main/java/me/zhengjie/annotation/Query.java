@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,7 +74,9 @@ public @interface Query {
         // 不为空
         ,NOT_NULL
         // 为空
-        ,IS_NULL
+        ,IS_NULL,
+        // Aborn Jiang 2022/06/01, 对应SQL: SELECT * FROM table WHERE FIND_IN_SET('querytag', table.tags);
+        FIND_IN_SET
     }
 
     /**

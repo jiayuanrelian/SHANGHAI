@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,24 +15,21 @@
  */
 package me.zhengjie.exception.handler;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 /**
  * @author Zheng Jie
  * @date 2018-11-23
  */
 @Data
-class ApiError {
+public class ApiError {
 
     private Integer status = 400;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime timestamp;
+    private Long timestamp;
     private String message;
 
     private ApiError() {
-        timestamp = LocalDateTime.now();
+        timestamp = System.currentTimeMillis();
     }
 
     public static ApiError error(String message){

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -111,8 +111,8 @@ public interface DeptService {
 
     /**
      * 获取
-     * @param deptList
-     * @return
+     * @param deptList /
+     * @return /
      */
     List<Long> getDeptChildren(List<Dept> deptList);
 

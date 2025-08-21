@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package me.zhengjie.modules.system.service;
 
+import me.zhengjie.utils.PageResult;
 import me.zhengjie.modules.system.domain.User;
 import me.zhengjie.modules.system.service.dto.UserDto;
-import me.zhengjie.modules.system.service.dto.UserLoginDto;
 import me.zhengjie.modules.system.service.dto.UserQueryCriteria;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,7 +71,7 @@ public interface UserService {
      * @param userName /
      * @return /
      */
-    UserLoginDto getLoginData(String userName);
+    UserDto getLoginData(String userName);
 
     /**
      * 修改密码
@@ -100,7 +100,7 @@ public interface UserService {
      * @param pageable 分页参数
      * @return /
      */
-    Object queryAll(UserQueryCriteria criteria, Pageable pageable);
+    PageResult<UserDto> queryAll(UserQueryCriteria criteria, Pageable pageable);
 
     /**
      * 查询全部不分页
@@ -122,4 +122,11 @@ public interface UserService {
      * @param resources /
      */
     void updateCenter(User resources);
+
+    /**
+     * 重置密码
+     * @param ids 用户id
+     * @param pwd 密码
+     */
+    void resetPwd(Set<Long> ids, String pwd);
 }
