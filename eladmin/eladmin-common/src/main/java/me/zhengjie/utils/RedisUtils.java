@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  */
 package me.zhengjie.utils;
 
+import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.*;
@@ -28,30 +29,29 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author /
  */
 @Component
-@SuppressWarnings({"unchecked", "all"})
+@SuppressWarnings({"all"})
 public class RedisUtils {
     private static final Logger log = LoggerFactory.getLogger(RedisUtils.class);
+
     private RedisTemplate<Object, Object> redisTemplate;
-    @Value("${jwt.online-key}")
-    private String onlineKey;
 
     public RedisUtils(RedisTemplate<Object, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
-        this.redisTemplate.setHashKeySerializer(new StringRedisSerializer());
         this.redisTemplate.setKeySerializer(new StringRedisSerializer());
-        this.redisTemplate.setStringSerializer(new StringRedisSerializer());
+        this.redisTemplate.setHashKeySerializer(new StringRedisSerializer());
     }
 
     /**
      * 指定缓存失效时间
      *
      * @param key  键
-     * @param time 时间(秒)
+     * @param time 时间(秒) 注意:这里将会替换原有的时间
      */
     public boolean expire(String key, long time) {
         try {
@@ -69,7 +69,7 @@ public class RedisUtils {
      * 指定缓存失效时间
      *
      * @param key      键
-     * @param time     时间(秒)
+     * @param time     时间(秒) 注意:这里将会替换原有的时间
      * @param timeUnit 单位
      */
     public boolean expire(String key, long time, TimeUnit timeUnit) {
@@ -185,13 +185,29 @@ public class RedisUtils {
             } else {
                 Set<Object> keySet = new HashSet<>();
                 for (String key : keys) {
-                    keySet.addAll(redisTemplate.keys(key));
+                    if (redisTemplate.hasKey(key))
+                        keySet.add(key);
                 }
                 long count = redisTemplate.delete(keySet);
                 log.debug("--------------------------------------------");
                 log.debug("成功删除缓存：" + keySet.toString());
                 log.debug("缓存删除数量：" + count + "个");
                 log.debug("--------------------------------------------");
+            }
+        }
+    }
+
+    /**
+     * 批量模糊删除key
+     * @param pattern
+     */
+    public void scanDel(String pattern){
+        ScanOptions options = ScanOptions.scanOptions().match(pattern).build();
+        try (Cursor<byte[]> cursor = redisTemplate.executeWithStickyConnection(
+                (RedisCallback<Cursor<byte[]>>) connection -> (Cursor<byte[]>) new ConvertingCursor<>(
+                        connection.scan(options), redisTemplate.getKeySerializer()::deserialize))) {
+            while (cursor.hasNext()) {
+                redisTemplate.delete(cursor.next());
             }
         }
     }
@@ -206,6 +222,68 @@ public class RedisUtils {
      */
     public Object get(String key) {
         return key == null ? null : redisTemplate.opsForValue().get(key);
+    }
+
+    /**
+     * 普通缓存获取
+     *
+     * @param key 键
+     * @return 值
+     */
+    public <T> T get(String key, Class<T> clazz) {
+        Object value = key == null ? null : redisTemplate.opsForValue().get(key);
+        if (value == null) {
+            return null;
+        }
+        // 如果 value 不是目标类型，则尝试将其反序列化为 clazz 类型
+        if (!clazz.isInstance(value)) {
+            return JSON.parseObject(value.toString(), clazz);
+        } else if (clazz.isInstance(value)) {
+            return clazz.cast(value);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * 普通缓存获取
+     *
+     * @param key 键
+     * @param clazz 列表中元素的类型
+     * @return 值
+     */
+    public <T> List<T> getList(String key, Class<T> clazz) {
+        Object value = key == null ? null : redisTemplate.opsForValue().get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof List<?>) {
+            List<?> list = (List<?>) value;
+            // 检查每个元素是否为指定类型
+            if (list.stream().allMatch(clazz::isInstance)) {
+                return list.stream().map(clazz::cast).collect(Collectors.toList());
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * 普通缓存获取
+     *
+     * @param key 键
+     * @return 值
+     */
+    public String getStr(String key) {
+        if(StrUtil.isBlank(key)){
+            return null;
+        }
+        Object value = redisTemplate.opsForValue().get(key);
+        if (value == null) {
+            return null;
+        } else {
+            return String.valueOf(value);
+        }
     }
 
     /**
@@ -229,13 +307,17 @@ public class RedisUtils {
      * @return true成功 false失败
      */
     public boolean set(String key, Object value) {
-        try {
-            redisTemplate.opsForValue().set(key, value);
-            return true;
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return false;
+        int attempt = 0;
+        while (attempt < 3) {
+            try {
+                redisTemplate.opsForValue().set(key, value);
+                return true;
+            } catch (Exception e) {
+                attempt++;
+                log.error("Attempt {} failed: {}", attempt, e.getMessage(), e);
+            }
         }
+        return false;
     }
 
     /**
@@ -243,7 +325,7 @@ public class RedisUtils {
      *
      * @param key   键
      * @param value 值
-     * @param time  时间(秒) time要大于0 如果time小于等于0 将设置无限期
+     * @param time  时间(秒) time要大于0 如果time小于等于0 将设置无限期，注意:这里将会替换原有的时间
      * @return true成功 false 失败
      */
     public boolean set(String key, Object value, long time) {
@@ -265,7 +347,7 @@ public class RedisUtils {
      *
      * @param key      键
      * @param value    值
-     * @param time     时间
+     * @param time     时间，注意:这里将会替换原有的时间
      * @param timeUnit 类型
      * @return true成功 false 失败
      */
@@ -325,11 +407,11 @@ public class RedisUtils {
     }
 
     /**
-     * HashSet 并设置时间
+     * HashSet
      *
      * @param key  键
      * @param map  对应多个键值
-     * @param time 时间(秒)
+     * @param time 时间(秒) 注意:如果已存在的hash表有时间,这里将会替换原有的时间
      * @return true成功 false失败
      */
     public boolean hmset(String key, Map<String, Object> map, long time) {
@@ -483,7 +565,7 @@ public class RedisUtils {
      * 将set数据放入缓存
      *
      * @param key    键
-     * @param time   时间(秒)
+     * @param time   时间(秒) 注意:这里将会替换原有的时间
      * @param values 值 可以是多个
      * @return 成功个数
      */
@@ -604,7 +686,7 @@ public class RedisUtils {
      *
      * @param key   键
      * @param value 值
-     * @param time  时间(秒)
+     * @param time  时间(秒) 注意:这里将会替换原有的时间
      * @return
      */
     public boolean lSet(String key, Object value, long time) {
@@ -642,7 +724,7 @@ public class RedisUtils {
      *
      * @param key   键
      * @param value 值
-     * @param time  时间(秒)
+     * @param time  时间(秒) 注意:这里将会替换原有的时间
      * @return
      */
     public boolean lSet(String key, List<Object> value, long time) {
@@ -703,10 +785,25 @@ public class RedisUtils {
             keys.addAll(redisTemplate.keys(new StringBuffer(prefix).append(id).toString()));
         }
         long count = redisTemplate.delete(keys);
-        // 此处提示可自行删除
-        log.debug("--------------------------------------------");
-        log.debug("成功删除缓存：" + keys.toString());
-        log.debug("缓存删除数量：" + count + "个");
-        log.debug("--------------------------------------------");
+    }
+
+    // ============================incr=============================
+
+    /**
+     * 递增
+     * @param key
+     * @return
+     */
+    public Long increment(String key) {
+        return redisTemplate.opsForValue().increment(key);
+    }
+
+    /**
+     * 递减
+     * @param key
+     * @return
+     */
+    public Long decrement(String key) {
+        return redisTemplate.opsForValue().decrement(key);
     }
 }

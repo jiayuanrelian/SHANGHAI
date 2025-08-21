@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 package me.zhengjie.modules.system.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import me.zhengjie.config.FileProperties;
+import me.zhengjie.utils.PageResult;
+import me.zhengjie.config.properties.FileProperties;
 import me.zhengjie.exception.BadRequestException;
 import me.zhengjie.modules.security.service.OnlineUserService;
 import me.zhengjie.modules.security.service.UserCacheManager;
@@ -26,11 +27,8 @@ import me.zhengjie.exception.EntityNotFoundException;
 import me.zhengjie.modules.system.repository.UserRepository;
 import me.zhengjie.modules.system.service.UserService;
 import me.zhengjie.modules.system.service.dto.*;
-import me.zhengjie.modules.system.service.mapstruct.UserLoginMapper;
 import me.zhengjie.modules.system.service.mapstruct.UserMapper;
 import me.zhengjie.utils.*;
-import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -41,6 +39,7 @@ import javax.validation.constraints.NotBlank;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -49,7 +48,6 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-@CacheConfig(cacheNames = "user")
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -58,10 +56,9 @@ public class UserServiceImpl implements UserService {
     private final RedisUtils redisUtils;
     private final UserCacheManager userCacheManager;
     private final OnlineUserService onlineUserService;
-    private final UserLoginMapper userLoginMapper;
 
     @Override
-    public Object queryAll(UserQueryCriteria criteria, Pageable pageable) {
+    public PageResult<UserDto> queryAll(UserQueryCriteria criteria, Pageable pageable) {
         Page<User> page = userRepository.findAll((root, criteriaQuery, criteriaBuilder) -> QueryHelp.getPredicate(root, criteria, criteriaBuilder), pageable);
         return PageUtil.toPage(page.map(userMapper::toDto));
     }
@@ -73,11 +70,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Cacheable(key = "'id:' + #p0")
     @Transactional(rollbackFor = Exception.class)
     public UserDto findById(long id) {
-        User user = userRepository.findById(id).orElseGet(User::new);
-        ValidationUtil.isNull(user.getId(), "User", "id", id);
+        String key = CacheKey.USER_ID + id;
+        User user = redisUtils.get(key, User.class);
+        if (user == null) {
+            user = userRepository.findById(id).orElseGet(User::new);
+            ValidationUtil.isNull(user.getId(), "User", "id", id);
+            redisUtils.set(key, user, 1, TimeUnit.DAYS);
+        }
         return userMapper.toDto(user);
     }
 
@@ -118,6 +119,7 @@ public class UserServiceImpl implements UserService {
             redisUtils.del(CacheKey.DATA_USER + resources.getId());
             redisUtils.del(CacheKey.MENU_USER + resources.getId());
             redisUtils.del(CacheKey.ROLE_AUTH + resources.getId());
+            redisUtils.del(CacheKey.ROLE_USER + resources.getId());
         }
         // 修改部门会影响 数据权限
         if (!Objects.equals(resources.getDept(),user.getDept())) {
@@ -179,12 +181,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserLoginDto getLoginData(String userName) {
+    public UserDto getLoginData(String userName) {
         User user = userRepository.findByUsername(userName);
         if (user == null) {
-            throw new EntityNotFoundException(User.class, "name", userName);
+            return null;
         } else {
-            return userLoginMapper.toDto(user);
+            return userMapper.toDto(user);
         }
     }
 
@@ -193,6 +195,21 @@ public class UserServiceImpl implements UserService {
     public void updatePass(String username, String pass) {
         userRepository.updatePass(username, pass, new Date());
         flushCache(username);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPwd(Set<Long> ids, String pwd) {
+        List<User> users = userRepository.findAllById(ids);
+        // 清除缓存
+        users.forEach(user -> {
+            // 清除缓存
+            flushCache(user.getUsername());
+            // 强制退出
+            onlineUserService.kickOutForUsername(user.getUsername());
+        });
+        // 重置密码
+        userRepository.resetPwd(ids, pwd);
     }
 
     @Override

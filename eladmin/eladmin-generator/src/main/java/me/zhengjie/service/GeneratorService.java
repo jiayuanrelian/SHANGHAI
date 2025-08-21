@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@ package me.zhengjie.service;
 
 import me.zhengjie.domain.GenConfig;
 import me.zhengjie.domain.ColumnInfo;
+import me.zhengjie.domain.vo.TableInfo;
+import me.zhengjie.utils.PageResult;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -35,7 +36,7 @@ public interface GeneratorService {
      * @param startEnd 分页参数
      * @return /
      */
-    Object getTables(String name, int[] startEnd);
+    PageResult<TableInfo> getTables(String name, int[] startEnd);
 
     /**
      * 得到数据表的元数据

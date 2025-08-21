@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
-import me.zhengjie.modules.security.config.bean.SecurityProperties;
+import me.zhengjie.modules.security.config.SecurityProperties;
+import me.zhengjie.modules.security.service.dto.JwtUserDto;
 import me.zhengjie.utils.RedisUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,11 +42,12 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class TokenProvider implements InitializingBean {
 
-    private final SecurityProperties properties;
-    private final RedisUtils redisUtils;
-    public static final String AUTHORITIES_KEY = "user";
+    private Key signingKey;
     private JwtParser jwtParser;
-    private JwtBuilder jwtBuilder;
+    private final RedisUtils redisUtils;
+    private final SecurityProperties properties;
+    public static final String AUTHORITIES_UUID_KEY = "uid";
+    public static final String AUTHORITIES_UID_KEY = "userId";
 
     public TokenProvider(SecurityProperties properties, RedisUtils redisUtils) {
         this.properties = properties;
@@ -54,28 +56,37 @@ public class TokenProvider implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
+        // 解码Base64密钥并创建签名密钥
         byte[] keyBytes = Decoders.BASE64.decode(properties.getBase64Secret());
-        Key key = Keys.hmacShaKeyFor(keyBytes);
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+        // 初始化 JwtParser
         jwtParser = Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(signingKey) // 使用预生成的签名密钥
                 .build();
-        jwtBuilder = Jwts.builder()
-                .signWith(key, SignatureAlgorithm.HS512);
     }
 
     /**
      * 创建Token 设置永不过期，
      * Token 的时间有效性转到Redis 维护
      *
-     * @param authentication /
+     * @param user /
      * @return /
      */
-    public String createToken(Authentication authentication) {
-        return jwtBuilder
-                // 加入ID确保生成的 Token 都不一致
-                .setId(IdUtil.simpleUUID())
-                .claim(AUTHORITIES_KEY, authentication.getName())
-                .setSubject(authentication.getName())
+    public String createToken(JwtUserDto user) {
+        // 设置参数
+        Map<String, Object> claims = new HashMap<>(6);
+        // 设置用户ID
+        claims.put(AUTHORITIES_UID_KEY, user.getUser().getId());
+        // 设置UUID，确保每次Token不一样
+        claims.put(AUTHORITIES_UUID_KEY, IdUtil.simpleUUID());
+        // 直接调用 Jwts.builder() 创建新实例
+        return Jwts.builder()
+                // 设置自定义 Claims
+                .setClaims(claims)
+                // 设置主题
+                .setSubject(user.getUsername())
+                // 使用预生成的签名密钥和算法签名
+                .signWith(signingKey, SignatureAlgorithm.HS512)
                 .compact();
     }
 
@@ -102,14 +113,15 @@ public class TokenProvider implements InitializingBean {
      */
     public void checkRenewal(String token) {
         // 判断是否续期token,计算token的过期时间
-        long time = redisUtils.getExpire(properties.getOnlineKey() + token) * 1000;
+        String loginKey = loginKey(token);
+        long time = redisUtils.getExpire(loginKey) * 1000;
         Date expireDate = DateUtil.offset(new Date(), DateField.MILLISECOND, (int) time);
         // 判断当前时间与过期时间的时间差
         long differ = expireDate.getTime() - System.currentTimeMillis();
         // 如果在续期检查的范围内，则续期
         if (differ <= properties.getDetect()) {
             long renew = time + properties.getRenew();
-            redisUtils.expire(properties.getOnlineKey() + token, renew, TimeUnit.MILLISECONDS);
+            redisUtils.expire(loginKey, renew, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -119,5 +131,25 @@ public class TokenProvider implements InitializingBean {
             return requestHeader.substring(7);
         }
         return null;
+    }
+
+    /**
+     * 获取登录用户RedisKey
+     * @param token /
+     * @return key
+     */
+    public String loginKey(String token) {
+        Claims claims = getClaims(token);
+        return properties.getOnlineKey() + claims.getSubject() + ":" + getId(token);
+    }
+
+    /**
+     * 获取登录用户TokenKey
+     * @param token /
+     * @return /
+     */
+    public String getId(String token) {
+        Claims claims = getClaims(token);
+        return claims.get(AUTHORITIES_UUID_KEY).toString();
     }
 }

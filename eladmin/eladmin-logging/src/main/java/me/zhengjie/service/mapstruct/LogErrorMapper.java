@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2020 Zheng Jie
+ *  Copyright 2019-2025 Zheng Jie
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package me.zhengjie.service.mapstruct;
 
 import me.zhengjie.base.BaseMapper;
-import me.zhengjie.domain.Log;
-import me.zhengjie.service.dto.LogErrorDTO;
+import me.zhengjie.domain.SysLog;
+import me.zhengjie.service.dto.SysLogErrorDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
@@ -26,6 +26,6 @@ import org.mapstruct.ReportingPolicy;
  * @date 2019-5-22
  */
 @Mapper(componentModel = "spring",unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface LogErrorMapper extends BaseMapper<LogErrorDTO, Log> {
+public interface LogErrorMapper extends BaseMapper<SysLogErrorDto, SysLog> {
 
 }
