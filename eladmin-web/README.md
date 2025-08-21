@@ -21,7 +21,15 @@ ELADMIN 前端源码
 
 模板文档： [https://panjiachen.github.io/vue-element-admin-site/zh/guide/](https://panjiachen.github.io/vue-element-admin-site/zh/guide/)
 
+#### VPS推荐
+<a href="https://bwh81.net/aff.php?aff=70876" target="_blank">
+<img src="https://eladmin.vip/images/banner/side.jpeg" style="width: 435px;border-radius: 2px;">
+</a>
+
+使用优惠码: `BWHCGLUKKB`，可获得 6.81% 的折扣， [查看介绍](https://bwhstock.in/)
+
 #### Build Setup
+**推荐 node 版本：12-16**
 ``` bash
 # 配置镜像加速
 https://www.ydyno.com/archives/1219.html
@@ -48,7 +56,14 @@ npm run build:prod
 
 2、加速node-sass安装
 
-https://www.ydyno.com/archives/1219.html
+https://izlzl.com/archives/1219.html
+
+3、出现 No module named 'distutils'
+
+```
+需要安装 python，安装 pip 或者 pip3
+然后安装 pip install distutils / pip3 install distutils
+```
 
 #### 特别鸣谢
 
@@ -66,4 +81,4 @@ https://www.ydyno.com/archives/1219.html
 
 #### 反馈交流
 
-- QQ交流群：一群：891137268、二群：947578238、三群：659622532
+- QQ交流群：891137268 、947578238、659622532

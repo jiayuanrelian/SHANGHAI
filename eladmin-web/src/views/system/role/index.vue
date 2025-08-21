@@ -34,6 +34,9 @@
             v-model="deptDatas"
             :load-options="loadDepts"
             :options="depts"
+            :flat="true"
+            :auto-select-descendants="true"
+            :default-expand-level="1"
             multiple
             style="width: 380px"
             placeholder="请选择"
@@ -60,7 +63,11 @@
             <el-table-column prop="name" label="名称" />
             <el-table-column prop="dataScope" label="数据权限" />
             <el-table-column prop="level" label="角色级别" />
-            <el-table-column :show-overflow-tooltip="true" prop="description" label="描述" />
+            <el-table-column :show-overflow-tooltip="true" prop="description" label="描述">
+              <template slot-scope="scope">
+                {{ scope.row.description == null ? '-' : scope.row.description }}
+              </template>
+            </el-table-column>
             <el-table-column :show-overflow-tooltip="true" width="135px" prop="createTime" label="创建日期" />
             <el-table-column v-if="checkPer(['admin','roles:edit','roles:del'])" label="操作" width="130px" align="center" fixed="right">
               <template slot-scope="scope">
@@ -149,9 +156,6 @@ export default {
       rules: {
         name: [
           { required: true, message: '请输入名称', trigger: 'blur' }
-        ],
-        permission: [
-          { required: true, message: '请输入权限', trigger: 'blur' }
         ]
       }
     }
@@ -347,13 +351,13 @@ export default {
 </style>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
- ::v-deep .el-input-number .el-input__inner {
+  ::v-deep .el-input-number .el-input__inner {
     text-align: left;
   }
- ::v-deep .vue-treeselect__multi-value{
+  ::v-deep .vue-treeselect__multi-value{
     margin-bottom: 0;
   }
- ::v-deep .vue-treeselect__multi-value-item{
+  ::v-deep .vue-treeselect__multi-value-item{
     border: 0;
     padding: 0;
   }
