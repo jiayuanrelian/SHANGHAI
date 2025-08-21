@@ -4,7 +4,7 @@
     <div class="head-container">
       <div v-if="crud.props.searchToggle">
         <!-- 搜索 -->
-        <el-input v-model="query.id" clearable placeholder="输入名称或IP搜索" style="width: 200px" class="filter-item" @keyup.enter.native="crud.toQuery" />
+        <el-input v-model="query.blurry" clearable placeholder="输入名称或IP搜索" style="width: 200px" class="filter-item" @keyup.enter.native="crud.toQuery" />
         <date-range-picker v-model="query.createTime" class="date-item" />
         <rrOperation />
       </div>
@@ -59,8 +59,8 @@
 
 <script>
 
-import crudServer from '@/api/mnt/serverDeploy'
-import { testServerConnect } from '@/api/mnt/connect'
+import crudServer from '@/api/maint/serverDeploy'
+import { testServerConnect } from '@/api/maint/connect'
 import { validateIP } from '@/utils/validate'
 import CRUD, { presenter, header, form, crud } from '@crud/crud'
 import rrOperation from '@crud/RR.operation'
